@@ -15,10 +15,6 @@
     pkgs.zstd
   ];
 
-  scripts.hello.exec = ''
-    echo hello from $GREET
-  '';
-
   scripts.installDependencies.exec = ''
     python -c "import torchvision" &> /dev/null || {
       echo "Venv packages not installed. Installing..."
@@ -29,8 +25,6 @@
   '';
 
   enterShell = ''
-    hello
-    git --version
     installDependencies
     python main.py
   '';
