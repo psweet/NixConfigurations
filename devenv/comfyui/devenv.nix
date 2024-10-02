@@ -15,18 +15,22 @@
     pkgs.zstd
   ];
 
-  scripts.installDependencies.exec = ''
-    python -c "import torchvision" &> /dev/null || {
-      echo "Venv packages not installed. Installing..."
-      pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
-      pip install -r requirements.txt
-      echo "First install may require a restart of the devenv shell"
-    }
-  '';
+  tasks = {
+    "python:setup" = {
+      exec = ''
+        python -c "import torchvision" &> /dev/null || {
+          echo "Venv packages not installed. Installing..."
+          pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2
+          pip install -r requirements.txt
+        }
+      '';
+      after = [ "devenv:python:virtualenv" ];
+    };
+    "devenv:enterShell".after = [ "python:setup" ];
+  };
 
   enterShell = ''
-    installDependencies
-    python main.py
+    python main.py || echo "Restart"
   '';
 
   # https://devenv.sh/tests/
