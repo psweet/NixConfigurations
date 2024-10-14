@@ -16,15 +16,11 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "SweetX9"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
   # Enable networking
-  networking.networkmanager.enable = true;
+  networking = {
+    hostName = "SweetX9";
+    networkmanager.enable = true;
+  };
 
   # Set your time zone.
   time.timeZone = "America/New_York";
@@ -135,6 +131,8 @@
     parsec-bin
     inkscape-with-extensions
     devenv
+    prismlauncher
+    wlx-overlay-s
   ];
 
   programs.git.enable = true;
@@ -150,8 +148,17 @@
     enable = true;
   };
 
-  boot.kernelPackages = pkgs.linuxPackages_zen;
-
+  boot.kernelPatches = [
+    {
+      name = "amdgpu-ignore-ctx-privileges";
+      patch = pkgs.fetchpatch {
+        name = "cap_sys_nice_begone.patch";
+        url = "https://github.com/Frogging-Family/community-patches/raw/master/linux61-tkg/cap_sys_nice_begone.mypatch";
+        hash = "sha256-Y3a0+x2xvHsfLax/uwycdJf3xLxvVfkfDVqjkxNaYEo=";
+      };
+    }
+  ];
+  
   programs.bash.shellAliases = {
     code = "codium";
   };
@@ -161,6 +168,11 @@
     enable = true;
     autoStart = true;
     capSysAdmin = true;
+    openFirewall = true;
+  };
+
+  programs.alvr = {
+    enable = true;
     openFirewall = true;
   };
 
