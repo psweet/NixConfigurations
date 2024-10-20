@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   imports =
@@ -40,17 +40,25 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
+  programs.hyprland.enable = true;
+  programs.waybar.enable = true;
+  services.greetd = {
+    enable = true;
+    settings = rec {
+      initial_session = {
+        command = "Hyprland";
+        user = "psweet";
+      };
+      default_session = initial_session;
+    };
+  };
 
-  # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
-
-  # Configure keymap in X11
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "";
+  fonts = {
+    enableDefaultPackages = true; 
+    packages = with pkgs; [
+      nerdfonts
+      inter
+    ];
   };
 
   # Enable CUPS to print documents.
@@ -64,6 +72,7 @@
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
+    wireplumber.enable = true;
     # If you want to use JACK applications, uncomment this
     #jack.enable = true;
 
@@ -79,16 +88,12 @@
   users.users.psweet = {
     isNormalUser = true;
     description = "Carlos";
-    extraGroups = [ "networkmanager" "wheel"];
+    extraGroups = [ "networkmanager" "wheel" "input"];
   };
 
   # Enable automatic login for the user.
-  services.displayManager.autoLogin.enable = true;
-  services.displayManager.autoLogin.user = "psweet";
-
-  # Workaround for GNOME autologin: https://github.com/NixOS/nixpkgs/issues/103746#issuecomment-945091229
-  systemd.services."getty@tty1".enable = false;
-  systemd.services."autovt@tty1".enable = false;
+  # services.displayManager.autoLogin.enable = true;
+  # services.displayManager.autoLogin.user = "psweet";
 
   # Install firefox.
   programs.firefox.enable = true;
@@ -107,6 +112,21 @@
     extraPackages = [ pkgs.rocmPackages.rocm-smi ];
   };
 
+  # Flake stuff
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  # Fixes icon and cursor script
+  gtk.iconCache.enable = true;
+
+  # For Nautilus
+  services.gvfs.enable = true;
+  environment.sessionVariables.GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
+    gst-plugins-good
+    gst-plugins-bad
+    gst-plugins-ugly
+    gst-libav
+  ]);
+
   environment.variables = {
       GI_TYPELIB_PATH = "/run/current-system/sw/lib/girepository-1.0";
   };
@@ -116,15 +136,14 @@
     vscodium
     vesktop
     sunshine
-    gnomeExtensions.appindicator
     adwaita-icon-theme
     libgtop
     lact
     mangohud
+
     protonup-qt
-    gnome-tweaks
+
     rocmPackages.rocm-smi
-    gnomeExtensions.astra-monitor
     wirelesstools
     pciutils
     amdgpu_top
@@ -132,12 +151,40 @@
     inkscape-with-extensions
     devenv
     prismlauncher
+    plexamp
+    wget
+    unzip
+    btop
+
     wlx-overlay-s
+
+    # General tools
+    kdePackages.gwenview
+
+    # Themeing
+    catppuccin-cursors.latteLight
+    nwg-look
+
+    # Hyprlnd stuff
+    kitty
+    mako
+
+    nautilus
+
+    hyprcursor
+    hyprpaper
+    
+    kdePackages.qtwayland
+    kdePackages.qt6ct
+    lxqt.lxqt-policykit
+    rofi-wayland
+    pavucontrol
+    grimblast
+    playerctl
   ];
 
   programs.git.enable = true;
 
-  services.udev.packages = with pkgs; [ gnome-settings-daemon ];
   systemd.services.lact = {
     description = "AMDGPU Control Daemon";
     after = ["multi-user.target"];
@@ -174,6 +221,11 @@
   programs.alvr = {
     enable = true;
     openFirewall = true;
+  };
+
+  networking.firewall = {
+    allowedTCPPorts = [ 27036 27037 ];
+    allowedUDPPorts = [ 27031 27036 ];
   };
 
   # This value determines the NixOS release from which the default
